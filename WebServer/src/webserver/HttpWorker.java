@@ -17,7 +17,6 @@ import java.util.StringTokenizer;
 public class HttpWorker extends Object {
 
     private static int nextWorkerID = 0;
-
     private File docRoot;
     private ObjetoCola idleWorkers;
     private int workerID;
@@ -25,6 +24,7 @@ public class HttpWorker extends Object {
 
     private Thread internalThread;
     private volatile boolean noStopRequested;
+    private String solicitud = null;
 
     public HttpWorker(File docRoot, int workerPriority, ObjetoCola idleWorkers) {
         this.docRoot = docRoot;
@@ -74,7 +74,8 @@ public class HttpWorker extends Object {
                 out = s.getOutputStream();
                 generateResponse(in, out);
                 out.flush();
-
+                s.close();
+                System.out.println("workerID " + workerID + " Hemos terminado");
             } catch (IOException iox) {
                 System.err.println("I/O error while procesing request, " + " ignoring and adding back to idle "
                         + "queue - workerID=" + workerID);
@@ -126,54 +127,66 @@ public class HttpWorker extends Object {
         StringTokenizer st = new StringTokenizer(requestLine);
         String filename = null;
 
-        String cadena = "";
-        int accountant = 0;
-        while ((cadena != null || cadena != "")&& accountant <4 ) {
-            cadena = reader.readLine();
-            if (cadena == null || cadena == "" ) {
-                break;
-            } else {
-                System.out.println("workerID " + workerID + " , "+cadena);
-            }
-            accountant++;
-        }
-
         try {
-            st.nextToken();
+            solicitud = st.nextToken();
             filename = st.nextToken();
         } catch (NoSuchElementException x) {
             throw new IOException("Could nor parse  request line");
         }
-
-        File requestedFile = generateFile(filename);
         BufferedOutputStream buffout = new BufferedOutputStream(out);
+        if (solicitud.indexOf("GET") != -1) {
+            File requestedFile = generateFile(filename);
 
-        if (requestedFile.exists()) {
-            System.out.println("workerID " + workerID + " 200 OK: " + filename);
+            if (requestedFile.exists()) {
+                System.out.println("workerID " + workerID + " 200 OK: " + filename);
 
-            int fileLen = (int) requestedFile.length();
-            BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(requestedFile));
+                int fileLen = (int) requestedFile.length();
+                BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(requestedFile));
 
-            String contentType = URLConnection.guessContentTypeFromStream(fileIn);
+                String contentType = URLConnection.guessContentTypeFromStream(fileIn);
+                byte[] headerBytes = createHeaderBytes("HTTP/1.0 200 OK", fileLen, contentType);
 
-            byte[] headerBytes = createHeaderBytes("HTTP/1.0 200 OK", fileLen, contentType);
+                buffout.write(headerBytes);
 
-            buffout.write(headerBytes);
+                byte[] buf = new byte[2048];
+                int blockLen = 0;
 
-            byte[] buf = new byte[2048];
-            int blockLen = 0;
+                while ((blockLen = fileIn.read(buf)) != -1) {
+                    buffout.write(buf, 0, blockLen);
+                }
+                buffout.write(headerBytes);
+                fileIn.close();
+            } else {
 
-            while ((blockLen = fileIn.read(buf)) != -1) {
-                buffout.write(buf, 0, blockLen);
+                System.out.println("workerID " + workerID + " 404 Not Found: " + filename);
+                byte[] headerBytes = createHeaderBytes("HTTP/1.0 404 Not Found", -1, null);
+                buffout.write(headerBytes);
+                
+                buffout.write(headerBytes);
             }
-            fileIn.close();
-        } else {
-            System.out.println("workerID " + workerID + " 404 Not Found: " + filename);
-            byte[] headerBytes = createHeaderBytes("HTTP/1.0 404 Not Found", -1, null);
+
+        } else if (solicitud.indexOf("POST") != -1) {
+            String filename2 = "./mi_web/" + filename;
+            PrintWriter fout = new PrintWriter(filename2);
+            String line;
+            while (!(line = reader.readLine()).equals("")) {
+                if((line.indexOf("Content-Type:"))!=-1 || (line.indexOf("Content-Length:")!=-1))
+                    System.out.println("workerID " + workerID + " , "+line);
+            }
+
+            String content = reader.readLine();
+            fout.print(content);
+
+            BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(filename2));
+            String contentType = URLConnection.guessContentTypeFromStream(fileIn);
+            byte[] headerBytes = createHeaderBytes("HTTP/1.0 200 OK", content.getBytes().length, contentType);
+            System.out.println("workerID " + workerID + " 200 OK: " + filename);
             buffout.write(headerBytes);
+            buffout.write(headerBytes);
+            fout.close();
         }
         buffout.flush();
-
+        buffout.close();
     }
 
     private File generateFile(String filename) {
@@ -205,7 +218,9 @@ public class HttpWorker extends Object {
         if (contentLen != -1) {
             writer.write("Content-Length: " + contentLen + "\r\n");
         }
-
+        if (contentType == null && contentLen != -1) {
+            writer.write("Content-Type: " + "text/html" + "\r\n");
+        }
         if (contentType != null) {
             writer.write("Content-Type: " + contentType + "\r\n");
         }
