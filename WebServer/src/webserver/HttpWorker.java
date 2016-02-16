@@ -169,7 +169,7 @@ public class HttpWorker extends Object {
 
             if (requestedFile.exists()) {
                 System.out.println("workerID " + workerID + " 201 OK: " + filename);
-               
+
                 int fileLen = (int) requestedFile.length();
                 BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(requestedFile));
 
@@ -192,35 +192,44 @@ public class HttpWorker extends Object {
                 buffout.write(headerBytes);
             }
 
-        }else if (solicitud.indexOf("PUT") != -1){
-              File requestedFile = generateFile(filename);
+        } else if (solicitud.indexOf("PUT") != -1) {
+            File requestedFile = generateFile(filename);
+            File archivo = new File(filename);
+            BufferedReader scan = new BufferedReader(new FileReader(archivo));
+            PrintWriter escribir = new PrintWriter(filename);
 
-            if (requestedFile.exists()) {
-                System.out.println("workerID " + workerID + " 201 OK: " + filename);
-               
-                int fileLen = (int) requestedFile.length();
-                BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(requestedFile));
+            try {
+                String contenido;
 
-                String contentType = URLConnection.guessContentTypeFromStream(fileIn);
-                byte[] headerBytes = createHeaderBytes(version + " 201 OK", fileLen, contentType);
-
-                buffout.write(headerBytes);
-
-                byte[] buf = new byte[2048];
-                int blockLen = 0;
-
-                while ((blockLen = fileIn.read(buf)) != -1) {
-                    buffout.write(buf, 0, blockLen);
+                while ((contenido = scan.readLine()) != null) {
+                    escribir.write(contenido);
                 }
-                fileIn.close();
-            } else {
-
-                System.out.println("workerID " + workerID + " 404 Not Found: " + filename);
-                byte[] headerBytes = createHeaderBytes(version + " 404 Not Found", -1, null);
-                buffout.write(headerBytes);
-            }  
-                
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
+
+            scan.close();
+            escribir.close();
+
+            System.out.println("workerID " + workerID + " 201 OK: " + filename);
+
+            int fileLen = (int) requestedFile.length();
+            BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(requestedFile));
+
+            String contentType = URLConnection.guessContentTypeFromStream(fileIn);
+            byte[] headerBytes = createHeaderBytes(version + " 201 OK", fileLen, contentType);
+
+            buffout.write(headerBytes);
+
+            byte[] buf = new byte[2048];
+            int blockLen = 0;
+
+            while ((blockLen = fileIn.read(buf)) != -1) {
+                buffout.write(buf, 0, blockLen);
+            }
+            fileIn.close();
+
+        }
         buffout.flush();
         buffout.close();
     }
@@ -267,5 +276,4 @@ public class HttpWorker extends Object {
         return data;
     }
 
-   
 }
