@@ -61,11 +61,6 @@ public class ObjetoCola {
          notifyAll();
      }
     
-      public synchronized void addLista(Object[] lista){
-          for(int i=0;i<lista.length;i++){
-              add(lista[i]);
-          }
-      }
       
       public synchronized Object remove(){
           waitWhileEmpty();
@@ -79,56 +74,14 @@ public class ObjetoCola {
           return objeto;
       }
       
-      public synchronized Object[] removeAll(){
-          Object lista[] = new Object[size];
-          for(int i=0;i<cola.length;i++){
-              lista[i]= remove();
-          }
-          return lista;
-      }
-      
-      public synchronized Object[] removeAlMenosUno(){
-          waitWhileEmpty();
-          return removeAll();
-      }
-      
-      public synchronized boolean waitUntilEmpty(long msTimeout){
-          if(msTimeout == 0L){
-              waitUntilEmpty();
-              return true;
-          }
-          
-          long tiempoFuera = System.currentTimeMillis() + msTimeout;
-          long msRestante = msTimeout;
-          
-          while(!estaVacio() && (msRestante>0L)){
-              try {
-                  wait(msRestante);
-              } catch (InterruptedException ex) {
-                  Logger.getLogger(ObjetoCola.class.getName()).log(Level.SEVERE, null, ex);
-              }
-              msRestante = tiempoFuera - System.currentTimeMillis();
-          }
-          return estaVacio();
-      }
-      
-      
-      public synchronized void waitUntilEmpty(){
-          while(!estaVacio()){
-              try {
-                  wait();
-              } catch (InterruptedException ex) {
-                  Logger.getLogger(ObjetoCola.class.getName()).log(Level.SEVERE, null, ex);
-              }
-          }
-      }
-      
+
+   
       public synchronized void waitWhileEmpty(){
           while(!estaLleno()){
               try {
                   wait();
               } catch (InterruptedException ex) {
-                  Logger.getLogger(ObjetoCola.class.getName()).log(Level.SEVERE, null, ex);
+                 
               }
           }
       }
@@ -138,7 +91,7 @@ public class ObjetoCola {
               try {
                   wait();
               } catch (InterruptedException ex) {
-                  Logger.getLogger(ObjetoCola.class.getName()).log(Level.SEVERE, null, ex);
+                 
               }
           }
       }

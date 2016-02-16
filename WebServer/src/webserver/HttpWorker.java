@@ -75,7 +75,7 @@ public class HttpWorker extends Object {
                 generateResponse(in, out);
                 out.flush();
                 //s.close();
-               // System.out.println("workerID " + workerID + " Hemos terminado");
+                // System.out.println("workerID " + workerID + " Hemos terminado");
             } catch (IOException iox) {
                 System.err.println("I/O error while procesing request, " + " ignoring and adding back to idle "
                         + "queue - workerID=" + workerID);
@@ -127,7 +127,7 @@ public class HttpWorker extends Object {
         StringTokenizer st = new StringTokenizer(requestLine);
         String filename = null;
         String version = null;
-        
+
         try {
             solicitud = st.nextToken();
             filename = st.nextToken();
@@ -146,7 +146,7 @@ public class HttpWorker extends Object {
                 BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(requestedFile));
 
                 String contentType = URLConnection.guessContentTypeFromStream(fileIn);
-                byte[] headerBytes = createHeaderBytes(version+" 200 OK", fileLen, contentType);
+                byte[] headerBytes = createHeaderBytes(version + " 200 OK", fileLen, contentType);
 
                 buffout.write(headerBytes);
 
@@ -160,28 +160,39 @@ public class HttpWorker extends Object {
             } else {
 
                 System.out.println("workerID " + workerID + " 404 Not Found: " + filename);
-                byte[] headerBytes = createHeaderBytes(version+" 404 Not Found", -1, null);
+                byte[] headerBytes = createHeaderBytes(version + " 404 Not Found", -1, null);
                 buffout.write(headerBytes);
             }
 
         } else if (solicitud.indexOf("POST") != -1) {
-            String filename2 = "./mi_web/" + filename;
-            PrintWriter fout = new PrintWriter(filename2);
-            String line;
-            while (!(line = reader.readLine()).equals("")) {
-                if((line.indexOf("Content-Type:"))!=-1 || (line.indexOf("Content-Length:")!=-1))
-                    System.out.println("workerID " + workerID + " , "+line);
+
+            File requestedFile = generateFile(filename);
+
+            if (requestedFile.exists()) {
+                System.out.println("workerID " + workerID + " 200 OK: " + filename);
+               
+                int fileLen = (int) requestedFile.length();
+                BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(requestedFile));
+
+                String contentType = URLConnection.guessContentTypeFromStream(fileIn);
+                byte[] headerBytes = createHeaderBytes(version + " 200 OK", fileLen, contentType);
+
+                buffout.write(headerBytes);
+
+                byte[] buf = new byte[2048];
+                int blockLen = 0;
+
+                while ((blockLen = fileIn.read(buf)) != -1) {
+                    buffout.write(buf, 0, blockLen);
+                }
+                fileIn.close();
+            } else {
+
+                System.out.println("workerID " + workerID + " 404 Not Found: " + filename);
+                byte[] headerBytes = createHeaderBytes(version + " 404 Not Found", -1, null);
+                buffout.write(headerBytes);
             }
 
-            String content = reader.readLine();
-            fout.print(content);
-
-            BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(filename2));
-            String contentType = URLConnection.guessContentTypeFromStream(fileIn);
-            byte[] headerBytes = createHeaderBytes(version+" 200 OK", content.getBytes().length, contentType);
-            System.out.println("workerID " + workerID + " 200 OK: " + filename);
-            buffout.write(headerBytes);
-            fout.close();
         }
         buffout.flush();
         buffout.close();
@@ -229,13 +240,5 @@ public class HttpWorker extends Object {
         return data;
     }
 
-    public void stopRequest() {
-        noStopRequested = false;
-        internalThread.interrupt();
-
-    }
-
-    public boolean isAlive() {
-        return internalThread.isAlive();
-    }
+   
 }

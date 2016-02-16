@@ -92,37 +92,7 @@ public class Server extends Object {
             }
         }
     }
-    
-    public void stopRequest(){
-        noStopRequested = false;
-        internalThread.interrupt();
-        
-        for(int i=0;i<workerList.length;i++){
-            workerList[i].stopRequest();
-        }
-        
-        if(ss!=null){
-            try{
-                ss.close();
-            }catch(IOException x){
-            }
-            ss=null;
-        }
-    }
-    
-    
-    public boolean isAlive(){
-        return internalThread.isAlive();
-    }
-    
-    private static void usageAndExit(String msg, int exitCode){
-        System.err.println(msg);
-        System.err.println("Usage: java HttpServer <port> "+"<numberWorkers> <documentRoot>");
-        System.err.println("    <port> - port to listen on "+"for HTTP request");
-        System.err.println("    <numberWorkers> - numberOf "+"worker threads to create");
-        System.err.println("    <documentRoot> - base "+"directory for Html files");
-        System.exit(exitCode);
-    }
-    
+   
+  
      
 }
