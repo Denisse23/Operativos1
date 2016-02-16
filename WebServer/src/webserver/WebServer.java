@@ -24,7 +24,7 @@ public class WebServer {
        File docRoot = new File("./mi_web/");
        Server server;
        try{
-           server =  new Server(docRoot,port, numWorkers,1);
+           server =  new Server(docRoot,port, numWorkers);
        }catch(IOException iox){
            iox.printStackTrace();
        }

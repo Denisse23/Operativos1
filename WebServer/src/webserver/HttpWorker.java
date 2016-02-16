@@ -26,7 +26,7 @@ public class HttpWorker extends Object {
     private volatile boolean noStopRequested;
     private String solicitud = null;
 
-    public HttpWorker(File docRoot, int workerPriority, ObjetoCola idleWorkers) {
+    public HttpWorker(File docRoot, ObjetoCola idleWorkers) {
         this.docRoot = docRoot;
         this.idleWorkers = idleWorkers;
         workerID = getNextWorkerID();
@@ -45,7 +45,6 @@ public class HttpWorker extends Object {
         };
 
         internalThread = new Thread(r);
-        internalThread.setPriority(workerPriority);
         internalThread.start();
 
     }

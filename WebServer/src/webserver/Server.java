@@ -23,21 +23,19 @@ public class Server extends Object {
     private Thread internalThread;
     private volatile boolean noStopRequested;
     
-    public Server(File docRoot, int port, int numberOfWorkers, int maxPriority) throws IOException{
+    public Server(File docRoot, int port, int numberOfWorkers) throws IOException{
        
             ss = new ServerSocket(port, 10);
             
             if((docRoot == null) || !docRoot.exists() || !docRoot.isDirectory()){
             }else{
                 numberOfWorkers = Math.max(1, numberOfWorkers);
-                int serverPriority = Math.max(Thread.MIN_PRIORITY +2, Math.min(maxPriority, Thread.MAX_PRIORITY -1));
-                int workerPriority = serverPriority -1;
                 
                 idleWorkers = new ObjetoCola(numberOfWorkers);
                 workerList = new HttpWorker[numberOfWorkers];
                 
                 for(int i=0;i<numberOfWorkers;i++){
-                    workerList[i] =  new HttpWorker(docRoot, workerPriority, idleWorkers);
+                    workerList[i] =  new HttpWorker(docRoot, idleWorkers);
                 }
                 
                  noStopRequested = true;
@@ -53,7 +51,6 @@ public class Server extends Object {
                  };
                  
                  internalThread = new Thread(r);
-                 internalThread.setPriority(serverPriority);
                  internalThread.start();
             }
             
