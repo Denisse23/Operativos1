@@ -14,7 +14,7 @@ public class mainCliente {
     public static void main(String [] array) //</font>
 	{
 		Cliente instancia = new Cliente(); 
-		//instancia.conexionGET("http://localhost:80/hola.html");
-                instancia.conexionPOST("http://localhost:80/hola/he.html");
+		instancia.conexionGET("http://localhost:80");
+                //instancia.conexionPOST("http://localhost:80");
 	}
 }
