@@ -168,13 +168,13 @@ public class HttpWorker extends Object {
             File requestedFile = generateFile(filename);
 
             if (requestedFile.exists()) {
-                System.out.println("workerID " + workerID + " 200 OK: " + filename);
+                System.out.println("workerID " + workerID + " 201 OK: " + filename);
                
                 int fileLen = (int) requestedFile.length();
                 BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(requestedFile));
 
                 String contentType = URLConnection.guessContentTypeFromStream(fileIn);
-                byte[] headerBytes = createHeaderBytes(version + " 200 OK", fileLen, contentType);
+                byte[] headerBytes = createHeaderBytes(version + " 201 OK", fileLen, contentType);
 
                 buffout.write(headerBytes);
 
@@ -192,7 +192,35 @@ public class HttpWorker extends Object {
                 buffout.write(headerBytes);
             }
 
-        }
+        }else if (solicitud.indexOf("PUT") != -1){
+              File requestedFile = generateFile(filename);
+
+            if (requestedFile.exists()) {
+                System.out.println("workerID " + workerID + " 201 OK: " + filename);
+               
+                int fileLen = (int) requestedFile.length();
+                BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(requestedFile));
+
+                String contentType = URLConnection.guessContentTypeFromStream(fileIn);
+                byte[] headerBytes = createHeaderBytes(version + " 201 OK", fileLen, contentType);
+
+                buffout.write(headerBytes);
+
+                byte[] buf = new byte[2048];
+                int blockLen = 0;
+
+                while ((blockLen = fileIn.read(buf)) != -1) {
+                    buffout.write(buf, 0, blockLen);
+                }
+                fileIn.close();
+            } else {
+
+                System.out.println("workerID " + workerID + " 404 Not Found: " + filename);
+                byte[] headerBytes = createHeaderBytes(version + " 404 Not Found", -1, null);
+                buffout.write(headerBytes);
+            }  
+                
+            }
         buffout.flush();
         buffout.close();
     }
